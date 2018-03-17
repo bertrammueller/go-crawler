@@ -3,12 +3,12 @@ package main
 import (
 	"flag"
 
-	crawler "github.com/bertgit/crawler/internal"
+	crawl "github.com/bertgit/crawler/internal"
 )
 
 func main() {
-	domain := flag.String("domain", "monzo.com", "Domain to crawl")
+	url := flag.String("url", "http://www.monzo.com", "url to crawl")
 	flag.Parse()
-	crawler := new(crawler.Crawler)
-	crawler.Run(*domain)
+	crawler := new(crawl.Crawler)
+	crawler.Run(*url)
 }
