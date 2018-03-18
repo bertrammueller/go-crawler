@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/url"
 
-	crawl "github.com/bertgit/crawler/internal"
+	crawl "github.com/bertgit/crawler/internal/crawl"
 )
 
 func main() {
