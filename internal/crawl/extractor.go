@@ -9,7 +9,7 @@ import (
 )
 
 func extractUrls(body io.Reader, base *url.URL) []*url.URL {
-	var urls []*url.URL
+	uniqLinkedUrls := make(map[url.URL]struct{})
 	links := extractHref(body)
 	for _, link := range links {
 		linkedUrl, err := base.Parse(link)
@@ -20,9 +20,18 @@ func extractUrls(body io.Reader, base *url.URL) []*url.URL {
 			if base.Hostname() == linkedUrl.Hostname() {
 				// Remove fragments (#...) before appending
 				linkedUrl.Fragment = ""
-				urls = append(urls, linkedUrl)
+				uniqLinkedUrls[*linkedUrl] = struct{}{}
 			}
 		}
+	}
+	// Delete link to ourselves
+	delete(uniqLinkedUrls, *base)
+	// Write urls
+	var urls []*url.URL
+	for u := range uniqLinkedUrls {
+		// tmp required as u is iterator
+		tmp := u
+		urls = append(urls, &tmp)
 	}
 	return urls
 }

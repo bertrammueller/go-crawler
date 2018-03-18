@@ -6,10 +6,10 @@ type urlCache struct {
 	crawledUrls map[url.URL]struct{}
 }
 
-func newUrlCache() *urlCache {
-	c := new(urlCache)
-	c.crawledUrls = make(map[url.URL]struct{})
-	return c
+func newUrlCache() urlCache {
+	return urlCache{
+		crawledUrls: make(map[url.URL]struct{}),
+	}
 }
 
 func (c *urlCache) addToCacheIfNotExists(urlToCache *url.URL) bool {

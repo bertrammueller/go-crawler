@@ -3,6 +3,7 @@ package crawl
 import (
 	"fmt"
 	"net/url"
+	"time"
 )
 
 // Choose this to be basically infinite.
@@ -11,43 +12,55 @@ import (
 // custom queue with synchronisation points
 const urlFrontierBufferSize int = 1e6
 
+type workerResponse struct {
+	base       *url.URL
+	linkedUrls []*url.URL
+}
+
 type Crawler struct {
 	// Filtered URLs to be crawled
 	urlFrontier chan *url.URL
 	// Responses from individual workers
-	fetchedURLs chan []*url.URL
+	workerResp chan workerResponse
 	// Cache for visited URLs
 	urlCache urlCache
 	// Keeping track of worker tasks
 	tasksInProgress int
+	// Continuously updated sitemap
+	sitemap sitemap
 }
 
-func (c *Crawler) Run(seedUrl url.URL, numWorkers int) {
+func (c *Crawler) Run(seedUrl url.URL, numWorkers int, timeout time.Duration) {
 	fmt.Println("Crawling", seedUrl.String())
 	c.urlFrontier = make(chan *url.URL, urlFrontierBufferSize)
-	c.fetchedURLs = make(chan []*url.URL, numWorkers)
-	c.urlCache = *newUrlCache()
-	c.launchWorkerPool(numWorkers)
+	c.workerResp = make(chan workerResponse, numWorkers)
+	c.urlCache = newUrlCache()
+	c.sitemap = newSitemap()
+	c.launchWorkerPool(numWorkers, timeout)
 	c.enqueueUrls([]*url.URL{&seedUrl})
 	for c.tasksInProgress > 0 {
 		select {
-		case fetchedUrls := <-c.fetchedURLs:
+		case resp := <-c.workerResp:
 			c.tasksInProgress--
-			c.enqueueUrls(fetchedUrls)
+			c.sitemap.addCrawledPage(resp.base, resp.linkedUrls)
+			c.enqueueUrls(resp.linkedUrls)
 		}
 	}
 	fmt.Println("Done crawling")
+	c.sitemap.createDotFile()
+	fmt.Println("Success")
 }
 
-func (c *Crawler) launchWorkerPool(numWorkers int) {
+func (c *Crawler) launchWorkerPool(numWorkers int, timeout time.Duration) {
 	// We could launch the workers dynamically,
 	// but since we expect full load on them after
 	// an initial warm-up period, we can set up the pool directly
 	fmt.Println("Starting up workers...")
 	for i := 0; i < numWorkers; i++ {
 		w := worker{
-			fetchedURLs: c.fetchedURLs,
+			response:    c.workerResp,
 			urlFrontier: c.urlFrontier,
+			timeout:     timeout,
 		}
 		go w.Run()
 	}

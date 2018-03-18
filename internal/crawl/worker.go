@@ -13,7 +13,9 @@ type worker struct {
 	// Filtered URLs to be crawled
 	urlFrontier chan *url.URL
 	// Responses from individual workers
-	fetchedURLs chan []*url.URL
+	response chan workerResponse
+	// http request timeout
+	timeout time.Duration
 }
 
 func (w *worker) Run() {
@@ -30,17 +32,23 @@ func (w *worker) doWork(baseUrl *url.URL) {
 	body, err := w.fetchWebsite(baseUrl.String())
 	if err != nil {
 		fmt.Println("Error trying to fetch", baseUrl.String(), ":", err.Error())
-		w.fetchedURLs <- []*url.URL{}
+		w.response <- workerResponse{
+			base:       baseUrl,
+			linkedUrls: []*url.URL{},
+		}
 		return
 	}
 	fmt.Println("Received response for", baseUrl.String())
 	defer body.Close()
-	w.fetchedURLs <- extractUrls(body, baseUrl)
+	w.response <- workerResponse{
+		base:       baseUrl,
+		linkedUrls: extractUrls(body, baseUrl),
+	}
 }
 
 func (w *worker) fetchWebsite(url string) (io.ReadCloser, error) {
 	client := &http.Client{
-		Timeout: 30 * time.Second,
+		Timeout: w.timeout,
 	}
 	resp, err := client.Get(url)
 	if err != nil {
