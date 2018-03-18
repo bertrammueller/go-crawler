@@ -10,6 +10,7 @@ import (
 
 func main() {
 	flagUrl := flag.String("url", "http://www.monzo.com", "url to crawl")
+	flagNumWorkers := flag.Int("workers", 100, "Number of workers")
 	flag.Parse()
 	crawler := new(crawl.Crawler)
 	baseUrl, err := url.Parse(*flagUrl)
@@ -17,5 +18,5 @@ func main() {
 		fmt.Println("Invalid URL", *flagUrl)
 		return
 	}
-	crawler.Run(*baseUrl)
+	crawler.Run(*baseUrl, *flagNumWorkers)
 }
