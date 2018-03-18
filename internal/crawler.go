@@ -5,25 +5,27 @@ import (
 	"net/url"
 )
 
-const maxNumWorkers int = 1
+const maxNumWorkers int = 100
 const urlFrontierBufferSize int = 1e6
 
 type Crawler struct {
 	// Filtered URLs to be crawled
-	urlFrontier chan url.URL
+	urlFrontier chan *url.URL
 	// Responses from individual workers
-	fetchedURLs chan url.URL
+	fetchedURLs chan *url.URL
 	// Cache for visited URLs
 	urlCache urlCache
+	// Keeping track of processed urls
+	refCounter int
 }
 
 func (c *Crawler) Run(seedUrl url.URL) {
-	fmt.Println("Crawling", seedUrl)
-	c.urlFrontier = make(chan url.URL, urlFrontierBufferSize)
-	c.fetchedURLs = make(chan url.URL)
+	fmt.Println("Crawling", seedUrl.String())
+	c.urlFrontier = make(chan *url.URL, urlFrontierBufferSize)
+	c.fetchedURLs = make(chan *url.URL)
 	c.urlCache = *newUrlCache()
 	c.launchWorkerPool(maxNumWorkers)
-	c.enqueueUrl(seedUrl)
+	c.enqueueUrl(&seedUrl)
 	for {
 		select {
 		case fetchedUrl := <-c.fetchedURLs:
@@ -36,6 +38,7 @@ func (c *Crawler) launchWorkerPool(numWorkers int) {
 	// We could launch the workers dynamically,
 	// but since we expect full load on them after
 	// an initial warm-up period, we can set up the pool directly
+	fmt.Println("Starting up workers...")
 	for i := 0; i < numWorkers; i++ {
 		w := worker{
 			fetchedURLs: c.fetchedURLs,
@@ -45,11 +48,13 @@ func (c *Crawler) launchWorkerPool(numWorkers int) {
 	}
 }
 
-func (c *Crawler) enqueueUrl(urlToEnqueue url.URL) {
+func (c *Crawler) enqueueUrl(urlToEnqueue *url.URL) {
 	if isNewUrl := c.urlCache.addToCacheIfNotExists(urlToEnqueue); isNewUrl {
 		select {
 		case c.urlFrontier <- urlToEnqueue:
 			// url is queued for processing
+			c.refCounter++
+			fmt.Println("urls", c.refCounter)
 		default:
 			// Our queue is overloaded. Let's drop the url.
 			// Alternatively implement infinite queue without backpressure

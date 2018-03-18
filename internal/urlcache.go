@@ -12,12 +12,12 @@ func newUrlCache() *urlCache {
 	return c
 }
 
-func (c *urlCache) addToCacheIfNotExists(urlToCache url.URL) bool {
+func (c *urlCache) addToCacheIfNotExists(urlToCache *url.URL) bool {
 	// Adds url to cache and returns a bool whether this was added
 	// (true) or whether it already existed in the cache (false)
-	_, ok := c.crawledUrls[urlToCache]
+	_, ok := c.crawledUrls[*urlToCache]
 	if !ok {
-		c.crawledUrls[urlToCache] = struct{}{}
+		c.crawledUrls[*urlToCache] = struct{}{}
 		return true
 	}
 	return false
