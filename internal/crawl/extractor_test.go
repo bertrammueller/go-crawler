@@ -24,6 +24,9 @@ func TestReturnsUniqueUrls(t *testing.T) {
 	if len(urls) != 2 {
 		t.Error("Wrong number of Urls returned")
 	}
+	if urls[0].Path == "/bar" {
+		urls[0], urls[1] = urls[1], urls[0]
+	}
 	if urls[0].Path != "/foo" || urls[1].Path != "/bar" {
 		t.Error("Wrong Urls returned")
 	}
@@ -34,5 +37,13 @@ func TestDiscardsFragments(t *testing.T) {
 	urls := uniqUrls(base, []string{"/foo#bar"})
 	if len(urls) != 1 || urls[0].Path != "/foo" {
 		t.Error("Fragments not discarded")
+	}
+}
+
+func TestDiscardsExternalLinks(t *testing.T) {
+	base, _ := url.Parse("http://www.monzo.com")
+	urls := uniqUrls(base, []string{"http://www.monzo.com/foo", "http://www.google.com"})
+	if len(urls) != 1 || urls[0].Path != "/foo" {
+		t.Error("External links not discarded")
 	}
 }
