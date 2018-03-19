@@ -28,7 +28,7 @@ Install in your go path and run
 </pre>
 
 ### Performance
-i5 dual core, 5Ghz Wifi:  
+i5 dual core, 5GHz Wifi:  
 Crawls 305 pages from www.monzo.com in ~3s
 
 Number of workers doesn't improve much beyond 50 for above test case
