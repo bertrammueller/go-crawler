@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"time"
 
-	crawl "github.com/bertgit/crawler/internal/crawl"
+	crawl "github.com/bertgit/go-crawler/internal/crawl"
 )
 
 func main() {
