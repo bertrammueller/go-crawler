@@ -9,8 +9,12 @@ import (
 )
 
 func extractUrls(body io.Reader, base *url.URL) []*url.URL {
-	uniqLinkedUrls := make(map[url.URL]struct{})
 	links := extractHref(body)
+	return uniqUrls(base, links)
+}
+
+func uniqUrls(base *url.URL, links []string) []*url.URL {
+	uniqLinkedUrls := make(map[url.URL]struct{})
 	for _, link := range links {
 		linkedUrl, err := base.Parse(link)
 		if err != nil {

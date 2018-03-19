@@ -39,7 +39,6 @@ func (s *sitemap) createDotFile() {
 
 func (s *sitemap) writeDotFile(w WriteString) {
 	w.WriteString("digraph d {\n")
-	w.WriteString("graph [	fontname = \"Helvetica-Oblique\", size = \"10,10\" ];\n")
 	for v, e := range s.edges {
 		if len(e) == 0 {
 			w.WriteString(getNodeName(v) + "\n")
